@@ -139,86 +139,172 @@
             }
         }
 
-        /* Flagships gallery — open layout + subtle motion */
-        .flagship-masonry {
-            column-count: 1;
-            column-gap: 2.25rem;
-        }
-        @media (min-width: 640px) {
-            .flagship-masonry { column-count: 2; column-gap: 2.5rem; }
-        }
-        @media (min-width: 1024px) {
-            .flagship-masonry { column-count: 3; column-gap: 3rem; }
-        }
-        @media (min-width: 1280px) {
-            .flagship-masonry { column-gap: 3.5rem; }
+        /* Flagship gallery — dual marquee, pause on photo hover, captions */
+        .flagship-gallery-section {
+            --flagship-gap: clamp(1.25rem, 3.5vw, 2.75rem);
         }
 
-        .flagship-masonry-item {
-            break-inside: avoid;
-            margin-bottom: 2.25rem;
+        .flagship-marquee {
+            overflow: hidden;
+            width: 100%;
+            -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+            mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
         }
-        @media (min-width: 1024px) {
-            .flagship-masonry-item { margin-bottom: 2.75rem; }
-        }
-        .flagship-masonry-item:nth-child(3n + 1) { padding-top: 0.35rem; }
-        .flagship-masonry-item:nth-child(3n + 2) { padding-top: 0.85rem; }
-        .flagship-masonry-item:nth-child(5n + 1) figure { border-radius: 1.15rem; }
-        .flagship-masonry-item:nth-child(5n + 3) figure { border-radius: 0.85rem; }
 
-        .flagship-frame {
+        .flagship-marquee-track {
+            display: flex;
+            width: max-content;
+            gap: var(--flagship-gap);
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            will-change: transform;
+        }
+
+        .flagship-marquee-track--forward {
+            animation-name: flagship-marquee-left;
+            animation-duration: 72s;
+        }
+
+        .flagship-marquee-track--reverse {
+            animation-name: flagship-marquee-right;
+            animation-duration: 88s;
+        }
+
+        @keyframes flagship-marquee-left {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        @keyframes flagship-marquee-right {
+            from { transform: translateX(-50%); }
+            to { transform: translateX(0); }
+        }
+
+        .flagship-marquee:has(.flagship-item:hover) .flagship-marquee-track,
+        .flagship-marquee:has(.flagship-item:focus-within) .flagship-marquee-track {
+            animation-play-state: paused;
+        }
+
+        .flagship-item {
+            position: relative;
+            flex-shrink: 0;
             overflow: hidden;
             border-radius: 1rem;
-            border: 1px solid rgba(226, 232, 240, 0.9);
-            background: #fff;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-            transition: box-shadow 0.55s ease, border-color 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            box-shadow: 0 6px 28px -10px rgba(15, 23, 42, 0.14);
+            transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s ease;
         }
-        .flagship-masonry-item:hover .flagship-frame {
-            box-shadow: 0 22px 45px -18px rgba(15, 23, 42, 0.18);
-            border-color: rgba(234, 88, 12, 0.25);
-            transform: translateY(-4px);
-        }
-        .flagship-frame img {
+
+        .flagship-item img {
             width: 100%;
-            height: auto;
+            height: 100%;
+            object-fit: cover;
             display: block;
-            transform: scale(1);
-            transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .flagship-masonry-item:hover .flagship-frame img {
-            transform: scale(1.045);
+            transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        @keyframes flagship-reveal {
-            from {
-                opacity: 0;
-                transform: translateY(18px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .flagship-item:hover {
+            transform: translateY(-6px) scale(1.03);
+            box-shadow: 0 22px 48px -14px rgba(15, 23, 42, 0.22);
+            z-index: 2;
         }
 
-        @supports (animation-timeline: view()) {
-            .flagship-masonry-item {
-                animation: flagship-reveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
-                animation-timeline: view();
-                animation-range: entry 0% cover 42%;
-            }
+        .flagship-item:hover img {
+            transform: scale(1.07);
+        }
+
+        .flagship-item figcaption {
+            position: absolute;
+            inset: auto 0 0 0;
+            padding: 1.35rem 1rem 0.9rem;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.92) 0%, rgba(15, 23, 42, 0.5) 55%, transparent 100%);
+            color: #f8fafc;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            line-height: 1.4;
+            letter-spacing: 0.01em;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+        }
+
+        .flagship-item:hover figcaption,
+        .flagship-item:focus-within figcaption {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .flagship-item:focus-visible {
+            outline: 2px solid #ea580c;
+            outline-offset: 3px;
+        }
+
+        .flagship-item--sm {
+            width: clamp(200px, 24vw, 270px);
+            height: clamp(168px, 22vw, 230px);
+        }
+
+        .flagship-item--md {
+            width: clamp(230px, 28vw, 320px);
+            height: clamp(188px, 24vw, 260px);
+        }
+
+        .flagship-item--lg {
+            width: clamp(260px, 32vw, 380px);
+            height: clamp(210px, 26vw, 290px);
+        }
+
+        .flagship-item--tall {
+            width: clamp(220px, 26vw, 300px);
+            height: clamp(240px, 30vw, 340px);
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .flagship-masonry-item,
-            .flagship-frame,
-            .flagship-frame img {
-                animation: none !important;
-                transition: none !important;
+            .flagship-marquee {
+                -webkit-mask-image: none;
+                mask-image: none;
             }
-            .flagship-masonry-item:hover .flagship-frame,
-            .flagship-masonry-item:hover .flagship-frame img {
+
+            .flagship-marquee-track {
+                animation: none !important;
                 transform: none !important;
+                flex-wrap: wrap;
+                justify-content: center;
+                width: 100%;
+                max-width: 80rem;
+                margin-left: auto;
+                margin-right: auto;
+                row-gap: var(--flagship-gap);
+            }
+
+            .flagship-marquee-clone {
+                display: none;
+            }
+
+            .flagship-item {
+                transform: none;
+                overflow: visible;
+            }
+
+            .flagship-item:hover {
+                transform: none;
+            }
+
+            .flagship-item figcaption {
+                opacity: 1;
+                transform: none;
+                position: relative;
+                margin-top: 0.5rem;
+                padding: 0.5rem 0 0;
+                background: none;
+                color: #475569;
+                font-weight: 500;
+                font-size: 0.75rem;
+            }
+
+            .flagship-item:hover img {
+                transform: none;
             }
         }
     </style>
@@ -310,7 +396,7 @@
     <main x-cloak>
         <!-- Hero with Real Photo Background -->
         <header class="relative min-h-[85vh] flex items-center justify-center text-center hero-bg-photo">
-            <div class="max-w-4xl mx-auto px-4 py-32">
+            <div class="max-w-4xl mx-auto px-4 py-20 md:py-24">
                 <span class="inline-flex items-center gap-2 px-3 py-1 mb-8 text-[10px] font-bold tracking-[0.2em] text-secondary uppercase bg-orange-50/80 rounded-full">
                     <span class="w-1 h-1 bg-secondary rounded-full"></span> Student-Led Impact
                 </span>
@@ -329,7 +415,7 @@
         </header>
 
         <!-- Impact Stats — scroll progress hits 1 when section center reaches viewport center -->
-        <section id="stats-section" class="py-16 border-y border-slate-800 bg-slate-950 relative z-10">
+        <section id="stats-section" class="py-12 md:py-14 border-y border-slate-800 bg-slate-950 relative z-10">
             <div class="mx-auto max-w-7xl px-4 sm:px-6">
                 <div class="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 md:flex md:flex-row md:items-stretch md:justify-center md:gap-0 md:divide-x md:divide-slate-700/25">
                     <div class="stat-item flex w-full max-w-[11rem] flex-col items-center justify-center gap-2 text-center md:max-w-none md:min-h-[5.5rem] md:flex-1 md:basis-0 md:px-3 lg:px-4">
@@ -361,7 +447,7 @@
         </section>
 
         <!-- Mission -->
-        <section class="py-32 bg-white">
+        <section class="py-20 md:py-24 bg-white">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="grid md:grid-cols-2 gap-16 items-center">
                     <div>
@@ -386,10 +472,158 @@
             </div>
         </section>
 
+        <!-- Flagships / Gallery — full-bleed marquees, pause + caption on hover -->
+        <section class="flagship-gallery-section overflow-hidden bg-slate-50 py-16 md:py-20" aria-labelledby="flagships-title">
+            <div class="mx-auto mb-10 max-w-7xl px-4 text-center md:mb-12">
+                <h2 id="flagships-title" class="mb-4 text-sm font-bold uppercase tracking-[0.3em] text-secondary">Explore Our Flagships!</h2>
+                <h3 class="text-4xl font-bold text-primary md:text-5xl">Explore Our Flagships!</h3>
+            </div>
+
+            <div class="flex flex-col gap-10 md:gap-12">
+                <div class="flagship-marquee" role="presentation">
+                    <div class="flagship-marquee-track flagship-marquee-track--forward py-2">
+                        <figure tabindex="0" class="flagship-item flagship-item--md">
+                            <img src="https://static.wixstatic.com/media/3b7608_566f23624ba04851a663438d2b17fc51~mv2.jpg/v1/fill/w_638,h_285,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3c184b042a5986cfa28304fe38f1da42_edited.jpg" alt="InspireMe Festival 2024" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2024</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--tall">
+                            <img src="https://static.wixstatic.com/media/32b258_00fa850f3408417f92b21a62187ea226~mv2.jpg/v1/fill/w_656,h_650,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3653.jpg" alt="Appi Christmas Market 2024" loading="lazy" decoding="async" />
+                            <figcaption>Appi Christmas Market 2024</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--sm">
+                            <img src="https://static.wixstatic.com/media/3b7608_467fdaf9deee4e4b9baaf7069e544203~mv2.png/v1/fill/w_426,h_282,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3643%202_HEIC.png" alt="InspireMe Festival 2025" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2025</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--lg">
+                            <img src="https://static.wixstatic.com/media/3b7608_ce3ff16f78ae4e7ba3e0fa2af0f7b3ce~mv2.jpg/v1/fill/w_426,h_282,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/ea8752aced7526e10ad518189e070b5e_JPG.jpg" alt="InspireMe Festival 2025" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2025</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--md">
+                            <img src="https://static.wixstatic.com/media/3b7608_967efd61237a4ccc8b996628180a1759~mv2.jpg/v1/fill/w_426,h_297,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/35dab51ae254def47626956458a82a9b_JPG.jpg" alt="InspireMe Festival 2025" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2025</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--tall">
+                            <img src="https://static.wixstatic.com/media/3b7608_11f95c78f7834853b03ac8ed166fccee~mv2.jpg/v1/fill/w_426,h_596,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/InspireMe%20Festival%202_0%20Poster.jpg" alt="InspireMe Festival 2.0 Poster" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2.0 Poster</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--sm">
+                            <img src="https://static.wixstatic.com/media/3b7608_4ff8d652316146efb196129aa9758251~mv2.jpg/v1/fill/w_426,h_282,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3669.jpg" alt="InspireMe Festival 2025" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2025</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--md">
+                            <img src="https://static.wixstatic.com/media/3b7608_09e5e59f65eb40b2b450594960b232f5~mv2.jpg/v1/fill/w_245,h_367,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_09e5e59f65eb40b2b450594960b232f5~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--md flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_566f23624ba04851a663438d2b17fc51~mv2.jpg/v1/fill/w_638,h_285,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3c184b042a5986cfa28304fe38f1da42_edited.jpg" alt="InspireMe Festival 2024" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2024</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--tall flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/32b258_00fa850f3408417f92b21a62187ea226~mv2.jpg/v1/fill/w_656,h_650,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3653.jpg" alt="Appi Christmas Market 2024" loading="lazy" decoding="async" />
+                            <figcaption>Appi Christmas Market 2024</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--sm flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_467fdaf9deee4e4b9baaf7069e544203~mv2.png/v1/fill/w_426,h_282,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3643%202_HEIC.png" alt="InspireMe Festival 2025" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2025</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--lg flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_ce3ff16f78ae4e7ba3e0fa2af0f7b3ce~mv2.jpg/v1/fill/w_426,h_282,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/ea8752aced7526e10ad518189e070b5e_JPG.jpg" alt="InspireMe Festival 2025" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2025</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--md flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_967efd61237a4ccc8b996628180a1759~mv2.jpg/v1/fill/w_426,h_297,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/35dab51ae254def47626956458a82a9b_JPG.jpg" alt="InspireMe Festival 2025" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2025</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--tall flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_11f95c78f7834853b03ac8ed166fccee~mv2.jpg/v1/fill/w_426,h_596,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/InspireMe%20Festival%202_0%20Poster.jpg" alt="InspireMe Festival 2.0 Poster" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2.0 Poster</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--sm flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_4ff8d652316146efb196129aa9758251~mv2.jpg/v1/fill/w_426,h_282,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3669.jpg" alt="InspireMe Festival 2025" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2025</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--md flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_09e5e59f65eb40b2b450594960b232f5~mv2.jpg/v1/fill/w_245,h_367,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_09e5e59f65eb40b2b450594960b232f5~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                    </div>
+                </div>
+
+                <div class="flagship-marquee" role="presentation">
+                    <div class="flagship-marquee-track flagship-marquee-track--reverse py-2">
+                        <figure tabindex="0" class="flagship-item flagship-item--lg">
+                            <img src="https://static.wixstatic.com/media/3b7608_209569a4ed354d1fa025bf6d94ce6212~mv2.jpg/v1/fill/w_245,h_367,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_209569a4ed354d1fa025bf6d94ce6212~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--sm">
+                            <img src="https://static.wixstatic.com/media/3b7608_eb09a0b14c974e819b5f97d2f90e0437~mv2.jpg/v1/fill/w_760,h_504,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_eb09a0b14c974e819b5f97d2f90e0437~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--md">
+                            <img src="https://static.wixstatic.com/media/3b7608_b84b28650eb14a74934c4e66f7f932aa~mv2.jpg/v1/fill/w_367,h_244,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_b84b28650eb14a74934c4e66f7f932aa~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--tall">
+                            <img src="https://static.wixstatic.com/media/3b7608_b8ca63b6571940cd8c17234c16bf9aa0~mv2.jpg/v1/fill/w_367,h_244,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_b8ca63b6571940cd8c17234c16bf9aa0~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--md">
+                            <img src="https://static.wixstatic.com/media/3b7608_a1a40370439b4bd7b0004b8a083dce50~mv2.jpg/v1/fill/w_245,h_367,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_a1a40370439b4bd7b0004b8a083dce50~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--sm">
+                            <img src="https://static.wixstatic.com/media/3b7608_9195375eac2448d899dee188acf8e703~mv2.jpg/v1/fill/w_245,h_367,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_9195375eac2448d899dee188acf8e703~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--lg">
+                            <img src="https://static.wixstatic.com/media/3b7608_652ca0493e8c4267bd3ce0adc9bf93d0~mv2.jpg/v1/fill/w_349,h_233,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_652ca0493e8c4267bd3ce0adc9bf93d0~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure tabindex="0" class="flagship-item flagship-item--md">
+                            <img src="https://static.wixstatic.com/media/3b7608_83b03fed940747e898e511e44e868a67~mv2.jpg/v1/fill/w_349,h_233,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_83b03fed940747e898e511e44e868a67~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--lg flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_209569a4ed354d1fa025bf6d94ce6212~mv2.jpg/v1/fill/w_245,h_367,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_209569a4ed354d1fa025bf6d94ce6212~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--sm flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_eb09a0b14c974e819b5f97d2f90e0437~mv2.jpg/v1/fill/w_760,h_504,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_eb09a0b14c974e819b5f97d2f90e0437~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--md flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_b84b28650eb14a74934c4e66f7f932aa~mv2.jpg/v1/fill/w_367,h_244,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_b84b28650eb14a74934c4e66f7f932aa~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--tall flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_b8ca63b6571940cd8c17234c16bf9aa0~mv2.jpg/v1/fill/w_367,h_244,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_b8ca63b6571940cd8c17234c16bf9aa0~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--md flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_a1a40370439b4bd7b0004b8a083dce50~mv2.jpg/v1/fill/w_245,h_367,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_a1a40370439b4bd7b0004b8a083dce50~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--sm flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_9195375eac2448d899dee188acf8e703~mv2.jpg/v1/fill/w_245,h_367,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_9195375eac2448d899dee188acf8e703~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--lg flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_652ca0493e8c4267bd3ce0adc9bf93d0~mv2.jpg/v1/fill/w_349,h_233,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_652ca0493e8c4267bd3ce0adc9bf93d0~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                        <figure class="flagship-item flagship-item--md flagship-marquee-clone" aria-hidden="true" tabindex="-1">
+                            <img src="https://static.wixstatic.com/media/3b7608_83b03fed940747e898e511e44e868a67~mv2.jpg/v1/fill/w_349,h_233,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_83b03fed940747e898e511e44e868a67~mv2.jpg" alt="InspireMe Festival 2026" loading="lazy" decoding="async" />
+                            <figcaption>InspireMe Festival 2026</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Voices -->
-        <section class="py-32 bg-slate-50">
+        <section class="py-20 md:py-24 bg-slate-50">
             <div class="max-w-7xl mx-auto px-4">
-                <div class="text-center mb-20">
+                <div class="text-center mb-12 md:mb-14">
                     <h2 class="text-sm font-bold text-secondary uppercase tracking-[0.3em] mb-4">Why People Support Us</h2>
                     <h3 class="text-4xl font-bold text-primary">Why People Support Us</h3>
                 </div>
@@ -428,103 +662,8 @@
             </div>
         </section>
 
-        <!-- Flagships / Gallery -->
-        <section class="relative overflow-hidden bg-slate-50 py-32 md:py-40">
-            <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_55%_at_50%_-25%,rgba(234,88,12,0.07),transparent)]" aria-hidden="true"></div>
-            <div class="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
-                <div class="mx-auto mb-16 max-w-2xl text-center md:mb-24">
-                    <h2 class="mb-4 text-sm font-bold uppercase tracking-[0.3em] text-secondary">Explore Our Flagships!</h2>
-                    <h3 class="text-4xl font-bold text-primary">Explore Our Flagships!</h3>
-                </div>
-
-                <div class="flagship-masonry">
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_566f23624ba04851a663438d2b17fc51~mv2.jpg/v1/fill/w_638,h_285,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3c184b042a5986cfa28304fe38f1da42_edited.jpg" alt="InspireMe Festival 2024" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/32b258_00fa850f3408417f92b21a62187ea226~mv2.jpg/v1/fill/w_656,h_650,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3653.jpg" alt="Appi Christmas Market 2024" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_467fdaf9deee4e4b9baaf7069e544203~mv2.png/v1/fill/w_426,h_282,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3643%202_HEIC.png" alt="InspireMe Festival 2025 image" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_ce3ff16f78ae4e7ba3e0fa2af0f7b3ce~mv2.jpg/v1/fill/w_426,h_282,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/ea8752aced7526e10ad518189e070b5e_JPG.jpg" alt="InspireMe Festival 2025 image" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_967efd61237a4ccc8b996628180a1759~mv2.jpg/v1/fill/w_426,h_297,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/35dab51ae254def47626956458a82a9b_JPG.jpg" alt="InspireMe Festival 2025 image" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_11f95c78f7834853b03ac8ed166fccee~mv2.jpg/v1/fill/w_426,h_596,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/InspireMe%20Festival%202_0%20Poster.jpg" alt="InspireMe Festival 2.0 Poster" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_4ff8d652316146efb196129aa9758251~mv2.jpg/v1/fill/w_426,h_282,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3669.jpg" alt="InspireMe Festival 2025 image" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_09e5e59f65eb40b2b450594960b232f5~mv2.jpg/v1/fill/w_245,h_367,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_09e5e59f65eb40b2b450594960b232f5~mv2.jpg" alt="InspireMe Festival 2026 image 1" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_209569a4ed354d1fa025bf6d94ce6212~mv2.jpg/v1/fill/w_245,h_367,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_209569a4ed354d1fa025bf6d94ce6212~mv2.jpg" alt="InspireMe Festival 2026 image 2" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_eb09a0b14c974e819b5f97d2f90e0437~mv2.jpg/v1/fill/w_760,h_504,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_eb09a0b14c974e819b5f97d2f90e0437~mv2.jpg" alt="InspireMe Festival 2026 image 3" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_b84b28650eb14a74934c4e66f7f932aa~mv2.jpg/v1/fill/w_367,h_244,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_b84b28650eb14a74934c4e66f7f932aa~mv2.jpg" alt="InspireMe Festival 2026 image 4" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_b8ca63b6571940cd8c17234c16bf9aa0~mv2.jpg/v1/fill/w_367,h_244,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_b8ca63b6571940cd8c17234c16bf9aa0~mv2.jpg" alt="InspireMe Festival 2026 image 5" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_a1a40370439b4bd7b0004b8a083dce50~mv2.jpg/v1/fill/w_245,h_367,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_a1a40370439b4bd7b0004b8a083dce50~mv2.jpg" alt="InspireMe Festival 2026 image 6" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_9195375eac2448d899dee188acf8e703~mv2.jpg/v1/fill/w_245,h_367,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_9195375eac2448d899dee188acf8e703~mv2.jpg" alt="InspireMe Festival 2026 image 7" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_652ca0493e8c4267bd3ce0adc9bf93d0~mv2.jpg/v1/fill/w_349,h_233,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_652ca0493e8c4267bd3ce0adc9bf93d0~mv2.jpg" alt="InspireMe Festival 2026 image 8" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                    <div class="flagship-masonry-item">
-                        <figure class="flagship-frame">
-                            <img src="https://static.wixstatic.com/media/3b7608_83b03fed940747e898e511e44e868a67~mv2.jpg/v1/fill/w_349,h_233,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/3b7608_83b03fed940747e898e511e44e868a67~mv2.jpg" alt="InspireMe Festival 2026 image 9" loading="lazy" decoding="async" />
-                        </figure>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <!-- Founder Quote -->
-        <section class="py-24 bg-white">
+        <section class="py-14 md:py-20 bg-white">
             <div class="max-w-4xl mx-auto px-4">
                 <div class="prof-card p-16 border-2 border-slate-900 bg-slate-900 text-white rounded-2xl">
                     <h3 class="text-4xl font-bold mb-6">Hear from our Founder: Casso Pi</h3>
@@ -536,9 +675,9 @@
         </section>
 
         <!-- News & Events -->
-        <section class="py-24 bg-white">
+        <section class="py-14 md:py-20 bg-white">
             <div class="max-w-7xl mx-auto px-4">
-                <div class="text-center mb-16">
+                <div class="text-center mb-10 md:mb-12">
                     <h2 class="text-sm font-bold text-secondary uppercase tracking-[0.3em] mb-4">News & Events</h2>
                     <h3 class="text-4xl font-bold text-primary">News & Events</h3>
                     <p class="text-slate-600 mt-6 max-w-2xl mx-auto leading-relaxed">
@@ -575,7 +714,7 @@
             </div>
 
             <!-- Instagram CTA -->
-            <section class="py-24 bg-white">
+            <section class="py-14 md:py-20 bg-white">
                 <div class="max-w-4xl mx-auto px-4 text-center">
                     <div class="prof-card p-16 border-2 border-slate-900 bg-slate-900 text-white rounded-2xl">
                         <h3 class="text-4xl font-bold mb-6">Join the Conversation</h3>
@@ -591,9 +730,9 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-900 text-white pt-24 pb-12">
+    <footer class="bg-slate-900 text-white pt-16 pb-12">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="grid md:grid-cols-4 gap-12 mb-20">
+            <div class="grid md:grid-cols-4 gap-12 mb-14">
                 <div class="col-span-2">
                     <div class="flex items-center gap-2 mb-6">
                         <div class="w-6 h-6 bg-secondary flex items-center justify-center text-white rounded-sm text-xs">H</div>
