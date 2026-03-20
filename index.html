@@ -117,111 +117,68 @@
         @media (max-width: 768px) {
             .stat-item { border-right: none; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; }
         }
+
+        #stats-section {
+            --stats-divider: rgba(148, 163, 184, 0.18);
+        }
+        #stats-section .stat-item {
+            border-right-color: var(--stats-divider);
+        }
+        @media (min-width: 768px) {
+            #stats-section .stat-item {
+                border-right: none;
+            }
+        }
+        @media (max-width: 767px) {
+            #stats-section .stat-item {
+                border-bottom-color: var(--stats-divider);
+            }
+            #stats-section .stat-item:nth-last-child(-n + 2) {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+        }
     </style>
 </head>
-<body x-data="{ 
-    initScrollAnimation() {
-        // Debounce "scrolling stopped" so counters freeze when you stop moving.
-        let isScrolling = false;
-        let scrollStopTimer = null;
+<body x-data="{
+    initStatsScroll() {
+        const statsSection = document.getElementById('stats-section');
+        if (!statsSection) return;
 
-        // Per-counter animation state so we can freeze/resume.
-        const stateByEl = new Map();
-
-        const isStatsInView = () => {
-            const statsSection = document.getElementById('stats-section');
-            if (!statsSection) return false;
-            const rect = statsSection.getBoundingClientRect();
-            return rect.top < window.innerHeight && rect.bottom > 0;
-        };
-
-        const cancelAll = () => {
-            stateByEl.forEach(st => {
-                if (st.animating && st.rafId != null) {
-                    cancelAnimationFrame(st.rafId);
-                }
-                st.animating = false;
-                st.rafId = null;
-            });
-        };
-
-        const startCounter = (el) => {
-            if (el.dataset.animated) return;
-            if (!isScrolling) return;
-
-            let st = stateByEl.get(el);
-            if (!st) {
-                const target = parseInt(el.getAttribute('data-target'));
-                const prefix = el.getAttribute('data-prefix') || '';
-                const suffix = el.getAttribute('data-suffix') || '+';
-                st = {
-                    target,
-                    prefix,
-                    suffix,
-                    current: 0,
-                    increment: target / 50,
-                    rafId: null,
-                    animating: false,
-                };
-                stateByEl.set(el, st);
+        const formatCounterValue = (val, target) => {
+            const n = Math.floor(Math.max(0, val));
+            if (target >= 1000) {
+                if (n < 1000) return String(n);
+                const k = n / 1000;
+                const rounded = k >= 100 ? Math.round(k) : Math.round(k * 10) / 10;
+                const s = rounded % 1 === 0 ? String(Math.round(rounded)) : String(rounded).replace(/\.0$/, '');
+                return s + 'K';
             }
-
-            if (st.animating) return;
-            st.animating = true;
-
-            const tick = () => {
-                // Stop immediately when scrolling stops.
-                if (!isScrolling) {
-                    st.animating = false;
-                    st.rafId = null;
-                    return;
-                }
-
-                st.current += st.increment;
-
-                if (st.current < st.target) {
-                    if (!isScrolling) {
-                        st.animating = false;
-                        st.rafId = null;
-                        return;
-                    }
-                    el.innerText = st.prefix + Math.floor(st.current).toLocaleString() + st.suffix;
-                    st.rafId = requestAnimationFrame(tick);
-                } else {
-                    el.innerText = st.prefix + st.target.toLocaleString() + st.suffix;
-                    el.dataset.animated = true;
-                    st.animating = false;
-                    st.rafId = null;
-                }
-            };
-
-            st.rafId = requestAnimationFrame(tick);
+            return String(n);
         };
 
-        const startOrResumeCounters = () => {
-            if (!isStatsInView()) return;
+        const update = () => {
+            const rect = statsSection.getBoundingClientRect();
+            const sectionCenterY = rect.top + rect.height / 2;
+            const viewportMid = window.innerHeight / 2;
+            const band = Math.max(window.innerHeight * 0.55, 300);
+            const raw = 1 - (sectionCenterY - viewportMid) / band;
+            const progress = Math.min(1, Math.max(0, raw));
 
-            document.querySelectorAll('.counter').forEach(el => {
-                if (el.dataset.animated) return;
-                const st = stateByEl.get(el);
-                if (st && st.animating) return;
-                startCounter(el);
+            statsSection.querySelectorAll('.counter').forEach((el) => {
+                const target = parseInt(el.getAttribute('data-target'), 10);
+                const ease = parseFloat(el.getAttribute('data-ease') || '1');
+                const suffix = el.getAttribute('data-suffix') || '+';
+                const t = Math.pow(progress, ease);
+                el.textContent = formatCounterValue(target * t, target) + suffix;
             });
         };
 
-        window.addEventListener('scroll', () => {
-            isScrolling = true;
-
-            if (scrollStopTimer) clearTimeout(scrollStopTimer);
-            scrollStopTimer = setTimeout(() => {
-                isScrolling = false;
-                cancelAll();
-            }, 150);
-
-            startOrResumeCounters();
-        });
+        window.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        requestAnimationFrame(update);
     }
-}" x-init="initScrollAnimation()">
+}" x-init="initStatsScroll()">
 
     <!-- Navigation -->
     <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
@@ -288,33 +245,33 @@
             </div>
         </header>
 
-        <!-- Impact Stats -->
-        <section id="stats-section" class="py-16 border-y border-slate-100 bg-white relative z-10">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
-                    <div class="stat-item flex flex-col items-center justify-center text-center">
-                        <h3 class="counter text-2xl lg:text-3xl font-bold text-primary" data-target="200">0+</h3>
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">Active Members</p>
+        <!-- Impact Stats — scroll progress hits 1 when section center reaches viewport center -->
+        <section id="stats-section" class="py-16 border-y border-slate-800 bg-slate-950 relative z-10">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6">
+                <div class="grid grid-cols-2 justify-items-center gap-x-6 gap-y-10 md:flex md:flex-row md:items-stretch md:justify-center md:gap-0 md:divide-x md:divide-slate-700/25">
+                    <div class="stat-item flex w-full max-w-[11rem] flex-col items-center justify-center gap-2 text-center md:max-w-none md:min-h-[5.5rem] md:flex-1 md:basis-0 md:px-3 lg:px-4">
+                        <h3 class="counter text-2xl lg:text-3xl font-bold leading-none text-amber-400" data-target="200" data-ease="0.52">0+</h3>
+                        <p class="text-[9px] font-bold uppercase leading-snug tracking-widest text-slate-400">Members Worldwide</p>
                     </div>
-                    <div class="stat-item flex flex-col items-center justify-center text-center">
-                        <h3 class="counter text-2xl lg:text-3xl font-bold text-primary" data-target="10000">0+</h3>
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">Service Hours</p>
+                    <div class="stat-item flex w-full max-w-[11rem] flex-col items-center justify-center gap-2 text-center md:max-w-none md:min-h-[5.5rem] md:flex-1 md:basis-0 md:px-3 lg:px-4">
+                        <h3 class="counter text-2xl lg:text-3xl font-bold leading-none text-amber-400" data-target="10000" data-ease="1.38">0+</h3>
+                        <p class="text-[9px] font-bold uppercase leading-snug tracking-widest text-slate-400">Hours of Service</p>
                     </div>
-                    <div class="stat-item flex flex-col items-center justify-center text-center">
-                        <h3 class="counter text-2xl lg:text-3xl font-bold text-primary" data-target="20">0+</h3>
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">Global Partners</p>
+                    <div class="stat-item flex w-full max-w-[11rem] flex-col items-center justify-center gap-2 text-center md:max-w-none md:min-h-[5.5rem] md:flex-1 md:basis-0 md:px-3 lg:px-4">
+                        <h3 class="counter text-2xl lg:text-3xl font-bold leading-none text-amber-400" data-target="20" data-ease="0.65">0+</h3>
+                        <p class="text-[9px] font-bold uppercase leading-snug tracking-widest text-slate-400">Past Partners</p>
                     </div>
-                    <div class="stat-item flex flex-col items-center justify-center text-center">
-                        <h3 class="counter text-2xl lg:text-3xl font-bold text-primary" data-target="10">0+</h3>
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">Cities Reached</p>
+                    <div class="stat-item flex w-full max-w-[11rem] flex-col items-center justify-center gap-2 text-center md:max-w-none md:min-h-[5.5rem] md:flex-1 md:basis-0 md:px-3 lg:px-4">
+                        <h3 class="counter text-2xl lg:text-3xl font-bold leading-none text-amber-400" data-target="10" data-ease="0.82">0+</h3>
+                        <p class="text-[9px] font-bold uppercase leading-snug tracking-widest text-slate-400">Cities Reached</p>
                     </div>
-                    <div class="stat-item flex flex-col items-center justify-center text-center">
-                        <h3 class="counter text-2xl lg:text-3xl font-bold text-primary" data-target="5000">0+</h3>
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">Beneficiaries</p>
+                    <div class="stat-item flex w-full max-w-[11rem] flex-col items-center justify-center gap-2 text-center md:max-w-none md:min-h-[5.5rem] md:flex-1 md:basis-0 md:px-3 lg:px-4">
+                        <h3 class="counter text-2xl lg:text-3xl font-bold leading-none text-amber-400" data-target="5000" data-ease="1.12">0+</h3>
+                        <p class="text-[9px] font-bold uppercase leading-snug tracking-widest text-slate-400">Lives Impacted</p>
                     </div>
-                    <div class="flex flex-col items-center justify-center text-center">
-                        <h3 class="counter text-2xl lg:text-3xl font-bold text-primary" data-target="170000" data-prefix="$">0+</h3>
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">Funds Raised</p>
+                    <div class="stat-item flex w-full max-w-[11rem] flex-col items-center justify-center gap-2 text-center md:max-w-none md:min-h-[5.5rem] md:flex-1 md:basis-0 md:px-3 lg:px-4">
+                        <h3 class="counter text-2xl lg:text-3xl font-bold leading-none text-amber-400" data-target="170000" data-ease="1.48">0+</h3>
+                        <p class="text-[9px] font-bold uppercase leading-snug tracking-widest text-slate-400">USD in Funding</p>
                     </div>
                 </div>
             </div>
@@ -384,20 +341,6 @@
                             <p class="text-xs text-slate-400 font-medium uppercase tracking-tighter">HELLO Trust's Asia-Pacific CEO: Artemis Cheung, HK</p>
                         </div>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Instagram CTA -->
-        <section class="py-24 bg-white">
-            <div class="max-w-4xl mx-auto px-4 text-center">
-                <div class="prof-card p-16 border-2 border-slate-900 bg-slate-900 text-white rounded-2xl">
-                    <h3 class="text-4xl font-bold mb-6">Join the Conversation</h3>
-                    <p class="text-slate-400 mb-10 text-lg">Follow our journey and real-time updates on our official platforms.</p>
-                    <a href="https://www.instagram.com/hellotrustofficial" target="_blank" class="prof-button prof-button-primary px-12 py-5 gap-3">
-                        <i class="fab fa-instagram text-xl"></i>
-                        <span class="uppercase tracking-widest text-xs font-bold">@hellotrustofficial</span>
-                    </a>
                 </div>
             </div>
         </section>
@@ -476,49 +419,6 @@
             </div>
         </section>
 
-        <!-- Our Highlights -->
-        <section class="py-24 bg-slate-50">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="text-center mb-16">
-                    <h2 class="text-sm font-bold text-secondary uppercase tracking-[0.3em] mb-4">Our Highlights</h2>
-                    <h3 class="text-4xl font-bold text-primary">Our Highlights</h3>
-                    <p class="text-slate-600 mt-6 max-w-2xl mx-auto leading-relaxed">
-                        Explore our exciting adventures and quests to make the world a better place. Immerse yourself in the gallery of HELLO Trust to learn more about our initiatives!
-                    </p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="prof-card p-8 text-center">
-                        <h4 class="text-xl font-bold text-primary">We Inspire</h4>
-                    </div>
-                    <div class="prof-card p-8 text-center">
-                        <h4 class="text-xl font-bold text-primary">We Collaborate</h4>
-                    </div>
-                    <div class="prof-card p-8 text-center">
-                        <h4 class="text-xl font-bold text-primary">We Dedicate</h4>
-                    </div>
-                    <div class="prof-card p-8 text-center">
-                        <h4 class="text-xl font-bold text-primary">We Care</h4>
-                    </div>
-                    <div class="prof-card p-8 text-center">
-                        <h4 class="text-xl font-bold text-primary">We Leverage</h4>
-                    </div>
-                    <div class="prof-card p-8 text-center">
-                        <h4 class="text-xl font-bold text-primary">We Enjoy</h4>
-                    </div>
-                    <div class="prof-card p-8 text-center">
-                        <h4 class="text-xl font-bold text-primary">We Explore</h4>
-                    </div>
-                    <div class="prof-card p-8 text-center">
-                        <h4 class="text-xl font-bold text-primary">We Encourage</h4>
-                    </div>
-                    <div class="prof-card p-8 text-center">
-                        <h4 class="text-xl font-bold text-primary">We Support</h4>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <!-- News & Events -->
         <section class="py-24 bg-white">
             <div class="max-w-7xl mx-auto px-4">
@@ -557,6 +457,20 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Instagram CTA -->
+            <section class="py-24 bg-white">
+                <div class="max-w-4xl mx-auto px-4 text-center">
+                    <div class="prof-card p-16 border-2 border-slate-900 bg-slate-900 text-white rounded-2xl">
+                        <h3 class="text-4xl font-bold mb-6">Join the Conversation</h3>
+                        <p class="text-slate-400 mb-10 text-lg">Follow our journey and real-time updates on our official platforms.</p>
+                        <a href="https://www.instagram.com/hellotrustofficial" target="_blank" class="prof-button prof-button-primary px-12 py-5 gap-3">
+                            <i class="fab fa-instagram text-xl"></i>
+                            <span class="uppercase tracking-widest text-xs font-bold">@hellotrustofficial</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
         </section>
     </main>
 
